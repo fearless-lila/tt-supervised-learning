@@ -1,0 +1,19 @@
+{
+  "label": "y",
+  "categorical_features": [
+    "drill_id",
+    "focus",
+    "time_of_day"
+  ],
+  "numeric_features": [
+    "difficulty",
+    "session_minutes"
+  ],
+  "all_features_order": [
+    "drill_id",
+    "focus",
+    "time_of_day",
+    "difficulty",
+    "session_minutes"
+  ]
+}
