@@ -1,0 +1,5 @@
+.venv/
+artifacts/
+data/*.csv
+__pycache__/
+*.pyc
