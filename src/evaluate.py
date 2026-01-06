@@ -1,20 +1,19 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from joblib import load
-from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
-    precision_recall_curve,
-    roc_auc_score,
-    average_precision_score,
-)
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 DATA_PATH = Path("data/supervised_dataset.csv")
 MODEL_PATH = Path("artifacts/model.joblib")
 
-LABEL_COL = "y"
+LABEL_COL = "y_rate"
 FEATURE_COLS = ["drill_id", "focus", "time_of_day", "difficulty", "session_minutes"]
+
+
+def clip01(x: np.ndarray) -> np.ndarray:
+    return np.clip(x, 0.0, 1.0)
 
 
 def main() -> None:
@@ -30,42 +29,31 @@ def main() -> None:
         raise ValueError(f"Missing required columns: {sorted(missing)}")
 
     X = df[FEATURE_COLS]
-    y = df[LABEL_COL].astype(int)
+    y_true = df[LABEL_COL].astype(float).to_numpy()
 
     model = load(MODEL_PATH)
 
-    # Probabilities for the positive class
-    proba = model.predict_proba(X)[:, 1]
-    pred = (proba >= 0.5).astype(int)
+    # Model predicts a real number; we clip to [0,1] because target is a rate
+    y_pred = clip01(model.predict(X))
 
-    # Metrics
-    acc = accuracy_score(y, pred)
+    mae = mean_absolute_error(y_true, y_pred)
+    mse = mean_squared_error(y_true, y_pred)
+    rmse = mse ** 0.5
 
-    # ROC-AUC needs both classes present
-    roc_auc = roc_auc_score(y, proba) if y.nunique() == 2 else None
-    pr_auc = average_precision_score(y, proba) if y.nunique() == 2 else None
+    # Brier score is just MSE for probabilistic targets
+    brier = mse
 
-    cm = confusion_matrix(y, pred)
-
-    print("=== Evaluation ===")
+    print("=== Evaluation (Regression on y_rate) ===")
     print(f"Rows: {len(df)}")
-    print(f"Accuracy @0.5: {acc:.3f}")
-    if roc_auc is not None:
-        print(f"ROC-AUC: {roc_auc:.3f}")
-        print(f"PR-AUC (Average Precision): {pr_auc:.3f}")
-    else:
-        print("ROC-AUC / PR-AUC: not available (only one class in y)")
+    print(f"MAE:  {mae:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"Brier (MSE): {brier:.4f}")
 
-    print("\nConfusion matrix [ [TN FP], [FN TP] ]:")
-    print(cm)
-
-    # Optional: show a few example predictions
     print("\nSample predictions:")
     preview = df.copy()
-    preview["p_success"] = proba
-    preview["pred"] = pred
-    cols = FEATURE_COLS + [LABEL_COL, "p_success", "pred"]
-    print(preview[cols].head(10).to_string(index=False))
+    preview["y_pred"] = y_pred
+    cols = FEATURE_COLS + [LABEL_COL, "y_pred"]
+    print(preview[cols].head(12).to_string(index=False))
 
 
 if __name__ == "__main__":

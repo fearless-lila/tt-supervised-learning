@@ -1,5 +1,5 @@
 {
-  "label": "y",
+  "label": "y_rate",
   "categorical_features": [
     "drill_id",
     "focus",
@@ -15,5 +15,6 @@
     "time_of_day",
     "difficulty",
     "session_minutes"
-  ]
+  ],
+  "task": "regression_prob_rate_0_1"
 }

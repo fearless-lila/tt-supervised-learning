@@ -4,17 +4,17 @@ from pathlib import Path
 import pandas as pd
 from joblib import dump
 from sklearn.compose import ColumnTransformer
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
+from sklearn.linear_model import Ridge
 
 DATA_PATH = Path("data/supervised_dataset.csv")
 ARTIFACT_DIR = Path("artifacts")
 MODEL_PATH = ARTIFACT_DIR / "model.joblib"
 SCHEMA_PATH = ARTIFACT_DIR / "schema.json"
 
-LABEL_COL = "y"
+LABEL_COL = "y_rate"
 CATEGORICAL_COLS = ["drill_id", "focus", "time_of_day"]
 NUMERIC_COLS = ["difficulty", "session_minutes"]
 
@@ -31,12 +31,11 @@ def main() -> None:
         raise ValueError(f"Missing required columns: {sorted(missing)}")
 
     X = df[CATEGORICAL_COLS + NUMERIC_COLS]
-    y = df[LABEL_COL].astype(int)
+    y = df[LABEL_COL].astype(float)
 
-    stratify = y if y.nunique() > 1 and y.value_counts().min() >= 2 else None
-
+    # Random split is fine for now; later we can do time-based splits.
     X_train, X_val, y_train, y_val = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=stratify
+        X, y, test_size=0.2, random_state=42
     )
 
     preprocessor = ColumnTransformer(
@@ -46,7 +45,8 @@ def main() -> None:
         ]
     )
 
-    model = LogisticRegression(max_iter=1000)
+    # Ridge is a stable baseline regressor
+    model = Ridge(alpha=1.0, random_state=42)
 
     pipeline = Pipeline(
         steps=[
@@ -65,6 +65,7 @@ def main() -> None:
         "categorical_features": CATEGORICAL_COLS,
         "numeric_features": NUMERIC_COLS,
         "all_features_order": CATEGORICAL_COLS + NUMERIC_COLS,
+        "task": "regression_prob_rate_0_1",
     }
     SCHEMA_PATH.write_text(json.dumps(schema, indent=2), encoding="utf-8")
 
