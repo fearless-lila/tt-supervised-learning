@@ -13,10 +13,11 @@ DATA_PATH = Path("data/supervised_dataset.csv")
 ARTIFACT_DIR = Path("artifacts")
 MODEL_PATH = ARTIFACT_DIR / "model.joblib"
 SCHEMA_PATH = ARTIFACT_DIR / "schema.json"
-
 LABEL_COL = "y_rate"
-CATEGORICAL_COLS = ["drill_id", "focus", "time_of_day"]
+CATEGORICAL_COLS = ["drill_id", "focus", "time_of_day", "skill_level", "fatigue"]
 NUMERIC_COLS = ["difficulty", "session_minutes"]
+
+
 
 
 def main() -> None:

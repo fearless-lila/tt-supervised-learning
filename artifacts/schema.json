@@ -3,7 +3,9 @@
   "categorical_features": [
     "drill_id",
     "focus",
-    "time_of_day"
+    "time_of_day",
+    "skill_level",
+    "fatigue"
   ],
   "numeric_features": [
     "difficulty",
@@ -13,6 +15,8 @@
     "drill_id",
     "focus",
     "time_of_day",
+    "skill_level",
+    "fatigue",
     "difficulty",
     "session_minutes"
   ],
