@@ -3,22 +3,13 @@
   "categorical_features": [
     "drill_id",
     "focus",
-    "time_of_day",
-    "skill_level",
-    "fatigue"
+    "skill_level"
   ],
-  "numeric_features": [
-    "difficulty",
-    "session_minutes"
-  ],
+  "numeric_features": [],
   "all_features_order": [
     "drill_id",
     "focus",
-    "time_of_day",
-    "skill_level",
-    "fatigue",
-    "difficulty",
-    "session_minutes"
+    "skill_level"
   ],
   "task": "regression_prob_rate_0_1"
 }

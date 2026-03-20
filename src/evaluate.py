@@ -10,7 +10,7 @@ DATA_PATH = Path("data/supervised_dataset.csv")
 MODEL_PATH = Path("artifacts/model.joblib")
 
 LABEL_COL = "y_rate"
-FEATURE_COLS = ["drill_id", "focus", "time_of_day", "skill_level", "fatigue", "difficulty", "session_minutes"]
+FEATURE_COLS = ["drill_id", "focus", "skill_level"]
 
 RANDOM_STATE = 42
 TEST_SIZE = 0.2
