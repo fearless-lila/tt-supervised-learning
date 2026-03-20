@@ -1,9 +1,12 @@
 # Supervised Learning + Bandit Decision System (End‑to‑End)
 
-This repository (`tt-supervised-learning`) is **one half** of a two‑repo system.
-Together with `table-tennis-multi-armed-bandit`, it forms a complete **offline prediction + online decision** learning loop.
+This repository (`tt-supervised-learning`) provides the **offline supervised learning** part of a broader personalization loop.
+Its current downstream consumer is `tt-coach-app`, where the trained model is used as a **soft prior** inside the online recommendation flow.
 
-This README intentionally documents **both repositories**, because the value of the project is in how they work *together*, not in either repo alone.
+The project now fits into a larger pattern:
+
+- offline supervised learning gives an initial estimate
+- online bandit learning adapts from live feedback
 
 ---
 
@@ -63,10 +66,10 @@ This mirrors real‑world personalization systems used in retail, recommendation
 ### Repositories
 
 ```
-Repo A: table-tennis-multi-armed-bandit
-  ├─ online decision making (UCB1 bandit)
-  ├─ logging real outcomes
-  └─ using supervised predictions as priors
+Repo A: tt-coach-app
+  ├─ search + frontend + API
+  ├─ contextual bandit decision layer
+  └─ uses supervised predictions as priors
 
 Repo B: tt-supervised-learning  (this repo)
   ├─ dataset creation from logs
@@ -85,18 +88,20 @@ Repo B: tt-supervised-learning  (this repo)
        │
        ▼
 ┌──────────────────────────┐
-│ Bandit selects a drill   │
-│ (UCB1 + supervised prior)│
+│ Search retrieves         │
+│ candidate drills         │
 └──────┬───────────────────┘
        │
        ▼
 ┌──────────────────────────┐
-│ Player performs drill    │
+│ Bandit selects one drill │
+│ using supervised prior   │
 └──────┬───────────────────┘
        │
        ▼
 ┌──────────────────────────┐
-│ Outcome logged           │
+│ User rates result        │
+│ and outcome is logged    │
 │ sessions.jsonl           │
 └──────┬───────────────────┘
        │
@@ -119,7 +124,7 @@ Repo B: tt-supervised-learning  (this repo)
        │
        ▼
 ┌──────────────────────────┐
-│ Bandit loads model       │
+│ Coach app loads model    │
 │ as soft prior            │
 └──────────────────────────┘
 ```
@@ -151,13 +156,11 @@ The model learns from **context + drill**:
 
 * `drill_id`
 * `focus` (goal)
-* `time_of_day`
 * `skill_level`
-* `fatigue`
-* `difficulty`
-* `session_minutes`
 
-These features intentionally mirror what is available **at decision time**.
+This reduced schema is intentional.
+
+It was simplified to match what is currently available in `tt-coach-app` at decision time, without needing additional user inputs such as fatigue, time of day, session duration, or drill difficulty.
 
 ---
 
@@ -165,7 +168,7 @@ These features intentionally mirror what is available **at decision time**.
 
 ### Key scripts
 
-* `export_dataset.py` (in bandit repo)
+* `export_dataset.py` (or equivalent dataset creation step)
 
   * converts `sessions.jsonl` → CSV
 
@@ -187,7 +190,7 @@ These features intentionally mirror what is available **at decision time**.
 * `model.joblib` – trained sklearn pipeline
 * `schema.json` – exact feature order contract
 
-These artifacts are **copied into the bandit repo**.
+These artifacts are used by the online app as a stable inference contract.
 
 ---
 
@@ -197,17 +200,17 @@ At runtime, for each candidate drill:
 
 1. Build the feature vector
 2. Predict success probability `p_hat ∈ [0,1]`
-3. Convert to reward scale: `prior_mean = 100 × p_hat`
-4. Treat this as **pseudo‑observations**
+3. Use that prediction as a soft prior
+4. Let the online bandit combine that prior with real feedback
 
-Mathematically:
+Conceptually:
 
 ```
 mean' = (real_reward + prior_mean × prior_pulls)
         / (real_pulls + prior_pulls)
 ```
 
-* `prior_pulls` is deliberately small (e.g. 5–10)
+* `prior_pulls` is deliberately small
 * Real experience eventually dominates
 
 This solves cold start **without locking in wrong beliefs**.
@@ -225,7 +228,7 @@ The system demonstrates all required properties:
 
 Observed behaviour:
 
-* Early sessions follow supervised priors
+* Early sessions follow supervised priors more strongly
 * Repeated bad outcomes reduce selection probability
 * Bandit eventually switches drills
 
@@ -254,22 +257,22 @@ Only the scale differs.
 
 ## 12. How to Run (Summary)
 
-### Bandit repo
+### Coach app / online repo
 
 ```bash
 source .venv/bin/activate
-python3 -m app.main
+python3 -m tt_coach_app.web
 ```
 
 ### Supervised repo
 
 ```bash
 source .venv/bin/activate
-python train.py
-python evaluate.py
+python src/train.py
+python src/evaluate.py
 ```
 
-Artifacts are then copied into the bandit repo.
+Artifacts are then consumed by the online app as a soft prior.
 
 ---
 
@@ -287,6 +290,11 @@ This project shows how—and why—you must use both.
 
 ## 14. Project Status
 
-This project is **complete as a learning system**.
+This project is **complete as an offline learning component**.
 
-Further work (UI, more data, alternative bandits) is optional and not required to validate the core idea.
+Further work may include:
+
+- richer features
+- alternative regressors
+- stronger dataset generation
+- tighter integration with online systems
